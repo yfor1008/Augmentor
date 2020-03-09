@@ -58,7 +58,7 @@ which will generate 10,000 augmented images based on your specifications. By def
 If you wish to process each image in the pipeline exactly once, use `process()`:
 
 ```python
-p.process()0
+p.process()
 ```
 
 This function might be useful for resizing a dataset for example. It would make sense to create a pipeline where all of its operations have their probability set to `1` when using the `process()` method.
