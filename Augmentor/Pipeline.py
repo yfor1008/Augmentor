@@ -192,7 +192,7 @@ class Pipeline(object):
                 self.augmentor_images.remove(augmentor_image)
 
         sys.stdout.write("Initialised with %s image(s) found.\n" % len(self.augmentor_images))
-        sys.stdout.write("Output directory set to %s." % abs_output_directory)
+        sys.stdout.write("Output directory set to %s.\n" % abs_output_directory)
 
     def _execute(self, augmentor_image, save_to_disk=True, multi_threaded=True):
         """
@@ -212,6 +212,7 @@ class Pipeline(object):
         """
 
         images = []
+        op_names = []
 
         if augmentor_image.image_path is not None:
             images.append(Image.open(augmentor_image.image_path))
@@ -231,18 +232,21 @@ class Pipeline(object):
             r = round(random.uniform(0, 1), 1)
             if r <= operation.probability:
                 images = operation.perform_operation(images)
+                op_names.append(str(operation))
 
         # TEMP FOR TESTING
         # save_to_disk = False
 
         if save_to_disk:
-            file_name = str(uuid.uuid4())
+            file_name = ''
+            if  len(op_names) == 0:
+                file_name = 'original'
+            else:
+                file_name = '_'.join(op_names)
             try:
                 for i in range(len(images)):
                     if i == 0:
-                        save_name = augmentor_image.class_label \
-                                    + "_original_" \
-                                    + os.path.basename(augmentor_image.image_path) \
+                        save_name = os.path.basename(augmentor_image.image_path).split('.')[-2] \
                                     + "_" \
                                     + file_name \
                                     + "." \
@@ -251,13 +255,10 @@ class Pipeline(object):
                         images[i].save(os.path.join(augmentor_image.output_directory, save_name))
 
                     else:
-                        save_name = "_groundtruth_(" \
+                        save_name = os.path.basename(augmentor_image.image_path).split('.')[-2] \
+                                    + "_groundtruth_(" \
                                     + str(i) \
                                     + ")_" \
-                                    + augmentor_image.class_label \
-                                    + "_" \
-                                    + os.path.basename(augmentor_image.image_path) \
-                                    + "_" \
                                     + file_name \
                                     + "." \
                                     + (self.save_format if self.save_format else augmentor_image.file_format)
@@ -373,6 +374,35 @@ class Pipeline(object):
 
         # This does not work as it did in the pre-multi-threading code above for some reason.
         # progress_bar.close()
+
+    def increase(self, n, multi_threaded=True):
+        '''
+        ### Docs: n times
+        '''
+        if len(self.augmentor_images) == 0:
+            raise IndexError("There are no images in the pipeline. "
+                             "Add a directory using add_directory(), "
+                             "pointing it to a directory containing images.")
+
+        if len(self.operations) == 0:
+            raise IndexError("There are no operations associated with this pipeline.")
+
+        augmentor_images = self.augmentor_images
+
+        if multi_threaded:
+            for iii in range(n):
+                with tqdm(total=len(augmentor_images), desc="Executing Pipeline", unit=" Samples") as progress_bar:
+                    with ThreadPoolExecutor(max_workers=None) as executor:
+                        for result in executor.map(self, augmentor_images):
+                            progress_bar.set_description("Processing %s" % result)
+                            progress_bar.update(1)
+        else:
+            for iii in range(n):
+                with tqdm(total=len(augmentor_images), desc="Executing Pipeline", unit=" Samples") as progress_bar:
+                    for augmentor_image in augmentor_images:
+                        self._execute(augmentor_image)
+                        progress_bar.set_description("Processing %s" % os.path.basename(augmentor_image.image_path))
+                        progress_bar.update(1)
 
     def process(self):
         """
@@ -1045,7 +1075,7 @@ class Pipeline(object):
         else:
             self.add_operation(Flip(probability=probability, top_bottom_left_right="RANDOM"))
 
-    def random_distortion(self, probability, grid_width, grid_height, magnitude):
+    def random_distortion(self, probability, grid_num_min, grid_num_max, magnitude):
         """
         Performs a random, elastic distortion on an image.
 
@@ -1063,22 +1093,20 @@ class Pipeline(object):
 
         :param probability: A value between 0 and 1 representing the
          probability that the operation should be performed.
-        :param grid_width: The number of rectangles in the grid's horizontal
-         axis.
-        :param grid_height: The number of rectangles in the grid's vertical
-         axis.
+        :param grid_num_min: The min number of rectangles.
+        :param grid_num_max: The max number of rectangles.
         :param magnitude: The magnitude of the distortions.
         :type probability: Float
-        :type grid_width: Integer
-        :type grid_height: Integer
+        :type grid_num_min: Integer
+        :type grid_num_max: Integer
         :type magnitude: Integer
         :return: None
         """
         if not 0 < probability <= 1:
             raise ValueError(Pipeline._probability_error_text)
         else:
-            self.add_operation(Distort(probability=probability, grid_width=grid_width,
-                                       grid_height=grid_height, magnitude=magnitude))
+            self.add_operation(Distort(probability=probability, grid_num_min=grid_num_min,
+                                       grid_num_max=grid_num_max, magnitude=magnitude))
 
     def gaussian_distortion(self, probability, grid_width, grid_height, magnitude, corner, method, mex=0.5, mey=0.5,
                             sdx=0.05, sdy=0.05):
@@ -1663,7 +1691,7 @@ class Pipeline(object):
         """
         if not 0 < probability <= 1:
             raise ValueError(Pipeline._probability_error_text)
-        elif not 0.1 < rectangle_area <= 1:
+        elif not 0.01 < rectangle_area <= 1:
             raise ValueError("The rectangle_area must be between 0.1 and 1.")
         else:
             self.add_operation(RandomErasing(probability=probability, rectangle_area=rectangle_area))

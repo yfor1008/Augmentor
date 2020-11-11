@@ -104,6 +104,9 @@ class HistogramEqualisation(Operation):
         """
         Operation.__init__(self, probability)
 
+    def __str__(self):
+        return "HE"
+
     def perform_operation(self, images):
         """
         Performs histogram equalisation on the images passed as an argument
@@ -151,6 +154,9 @@ class Greyscale(Operation):
         """
         Operation.__init__(self, probability)
 
+    def __str__(self):
+        return "Grey"
+
     def perform_operation(self, images):
         """
         Converts the passed image to greyscale and returns the transformed
@@ -188,6 +194,9 @@ class Invert(Operation):
         :type probability: Float
         """
         Operation.__init__(self, probability)
+
+    def __str__(self):
+        return "Invert"
 
     def perform_operation(self, images):
         """
@@ -237,6 +246,9 @@ class BlackAndWhite(Operation):
         """
         Operation.__init__(self, probability)
         self.threshold = threshold
+
+    def __str__(self):
+        return "BAndW"
 
     def perform_operation(self, images):
         """
@@ -293,6 +305,9 @@ class RandomBrightness(Operation):
         self.min_factor = min_factor
         self.max_factor = max_factor
 
+    def __str__(self):
+        return "RBright" + str(self.factor)[:6]
+
     def perform_operation(self, images):
         """
         Random change the passed image brightness.
@@ -303,6 +318,7 @@ class RandomBrightness(Operation):
          PIL.Image.
         """
         factor = np.random.uniform(self.min_factor, self.max_factor)
+        self.factor = factor
 
         def do(image):
 
@@ -344,6 +360,9 @@ class RandomColor(Operation):
         self.min_factor = min_factor
         self.max_factor = max_factor
 
+    def __str__(self):
+        return "RColor" + str(self.factor)[:6]
+
     def perform_operation(self, images):
         """
         Random change the passed image saturation.
@@ -354,6 +373,7 @@ class RandomColor(Operation):
          PIL.Image.
         """
         factor = np.random.uniform(self.min_factor, self.max_factor)
+        self.factor = factor
 
         def do(image):
 
@@ -395,6 +415,9 @@ class RandomContrast(Operation):
         self.min_factor = min_factor
         self.max_factor = max_factor
 
+    def __str__(self):
+        return "RContrast" + str(self.factor)[:6]
+
     def perform_operation(self, images):
         """
         Random change the passed image contrast.
@@ -405,6 +428,7 @@ class RandomContrast(Operation):
          PIL.Image.
         """
         factor = np.random.uniform(self.min_factor, self.max_factor)
+        self.factor = factor
 
         def do(image):
 
@@ -467,6 +491,10 @@ class Skew(Operation):
         Operation.__init__(self, probability)
         self.skew_type = skew_type
         self.magnitude = magnitude
+        self.skew_mode = ''
+
+    def __str__(self):
+        return "Skew" + self.skew_mode
 
     def perform_operation(self, images):
         """
@@ -523,10 +551,13 @@ class Skew(Operation):
         if skew == "TILT" or skew == "TILT_LEFT_RIGHT" or skew == "TILT_TOP_BOTTOM":
 
             if skew == "TILT":
+                self.skew_mode = 'T'
                 skew_direction = random.randint(0, 3)
             elif skew == "TILT_LEFT_RIGHT":
+                self.skew_mode = 'TLR'
                 skew_direction = random.randint(0, 1)
             elif skew == "TILT_TOP_BOTTOM":
+                self.skew_mode = 'TTB'
                 skew_direction = random.randint(2, 3)
 
             if skew_direction == 0:
@@ -644,6 +675,9 @@ class RotateStandard(Operation):
         self.expand = expand
         self.fillcolor = fillcolor
 
+    def __str__(self):
+        return "RotateS" + str(self.rotation)
+
     def perform_operation(self, images):
         """
         Documentation to appear.
@@ -664,6 +698,7 @@ class RotateStandard(Operation):
             rotation = random_left
         elif left_or_right == 1:
             rotation = random_right
+        self.rotation = rotation
 
         def do(image):
             return image.rotate(rotation, expand=self.expand, resample=Image.BICUBIC, fillcolor=self.fillcolor)
@@ -706,7 +741,7 @@ class Rotate(Operation):
         self.rotation = rotation
 
     def __str__(self):
-        return "Rotate " + str(self.rotation)
+        return "Rotate" + str(self.rotation)
 
     def perform_operation(self, images):
         """
@@ -780,6 +815,9 @@ class RotateRange(Operation):
         self.max_left_rotation = -abs(max_left_rotation)   # Ensure always negative
         self.max_right_rotation = abs(max_right_rotation)  # Ensure always positive
 
+    def __str__(self):
+        return "RotateR" + str(self.rotation)
+
     def perform_operation(self, images):
         """
         Perform the rotation on the passed :attr:`image` and return
@@ -806,6 +844,7 @@ class RotateRange(Operation):
             rotation = random_left
         elif left_or_right == 1:
             rotation = random_right
+        self.rotation = rotation
 
         def do(image):
             # Get size before we rotate
@@ -879,6 +918,9 @@ class Resize(Operation):
         self.height = height
         self.resample_filter = resample_filter
 
+    def __str__(self):
+        return "Resize" + str(self.height) + 'x' + str(self.width)
+
     def perform_operation(self, images):
         """
         Resize the passed image and returns the resized image. Uses the
@@ -927,6 +969,10 @@ class Flip(Operation):
         """
         Operation.__init__(self, probability)
         self.top_bottom_left_right = top_bottom_left_right
+        self.flip_mode = ''
+
+    def __str__(self):
+        return "Flip" + self.flip_mode
 
     def perform_operation(self, images):
         """
@@ -943,13 +989,17 @@ class Flip(Operation):
 
         def do(image):
             if self.top_bottom_left_right == "LEFT_RIGHT":
+                self.flip_mode = 'LR'
                 return image.transpose(Image.FLIP_LEFT_RIGHT)
             elif self.top_bottom_left_right == "TOP_BOTTOM":
+                self.flip_mode = 'TB'
                 return image.transpose(Image.FLIP_TOP_BOTTOM)
             elif self.top_bottom_left_right == "RANDOM":
                 if random_axis == 0:
+                    self.flip_mode = 'LR'
                     return image.transpose(Image.FLIP_LEFT_RIGHT)
                 elif random_axis == 1:
+                    self.flip_mode = 'TB'
                     return image.transpose(Image.FLIP_TOP_BOTTOM)
 
         augmented_images = []
@@ -989,6 +1039,9 @@ class Crop(Operation):
         self.width = width
         self.height = height
         self.centre = centre
+
+    def __str__(self):
+        return "Crop"
 
     def perform_operation(self, images):
         """
@@ -1052,6 +1105,9 @@ class CropPercentage(Operation):
         self.percentage_area = percentage_area
         self.centre = centre
         self.randomise_percentage_area = randomise_percentage_area
+
+    def __str__(self):
+        return "CropP"
 
     def perform_operation(self, images):
         """
@@ -1174,6 +1230,9 @@ class Shear(Operation):
         self.max_shear_left = max_shear_left
         self.max_shear_right = max_shear_right
 
+    def __str__(self):
+        return "Shear" + str(self.angle_to_shear)
+
     def perform_operation(self, images):
         """
         Shears the passed image according to the parameters defined during
@@ -1210,6 +1269,7 @@ class Shear(Operation):
         angle_to_shear = int(random.uniform((abs(self.max_shear_left)*-1) - 1, self.max_shear_right + 1))
         if angle_to_shear != -1: angle_to_shear += 1
 
+        self.angle_to_shear = angle_to_shear
         # Alternative method
         # Calculate our offset when cropping
         # We know one angle, phi (angle_to_shear)
@@ -1325,6 +1385,9 @@ class Scale(Operation):
         Operation.__init__(self, probability)
         self.scale_factor = scale_factor
 
+    def __str__(self):
+        return "Scale" + str(self.scale_factor)
+
     def perform_operation(self, images):
         """
         Scale the passed :attr:`images` by the factor specified during
@@ -1356,35 +1419,24 @@ class Distort(Operation):
     """
     This class performs randomised, elastic distortions on images.
     """
-    def __init__(self, probability, grid_width, grid_height, magnitude):
-        """
-        As well as the probability, the granularity of the distortions
-        produced by this class can be controlled using the width and
-        height of the overlaying distortion grid. The larger the height
-        and width of the grid, the smaller the distortions. This means
-        that larger grid sizes can result in finer, less severe distortions.
-        As well as this, the magnitude of the distortions vectors can
-        also be adjusted.
-
-        :param probability: Controls the probability that the operation is
-         performed when it is invoked in the pipeline.
-        :param grid_width: The width of the gird overlay, which is used
-         by the class to apply the transformations to the image.
-        :param grid_height: The height of the gird overlay, which is used
-         by the class to apply the transformations to the image.
-        :param magnitude: Controls the degree to which each distortion is
-         applied to the overlaying distortion grid.
-        :type probability: Float
-        :type grid_width: Integer
-        :type grid_height: Integer
-        :type magnitude: Integer
-        """
+    def __init__(self, probability, grid_num_min, grid_num_max, magnitude):
+        '''
+        ### Docs: init
+        ### Args:
+            - probability: float, [0, 1]
+            - grid_num_min: int
+            - grid_num_max: int
+            - magnitude: int, [1, 5]
+        '''
         Operation.__init__(self, probability)
-        self.grid_width = grid_width
-        self.grid_height = grid_height
+        self.grid_num_min = grid_num_min
+        self.grid_num_max = grid_num_max
         self.magnitude = abs(magnitude)
         # TODO: Implement non-random magnitude.
         self.randomise_magnitude = True
+
+    def __str__(self):
+        return "Dist" + str(self.grid_height_num) + 'x' + str(self.grid_width_num) + 'x' + str(self.magnitude)
 
     def perform_operation(self, images):
         """
@@ -1399,8 +1451,10 @@ class Distort(Operation):
 
         w, h = images[0].size
 
-        horizontal_tiles = self.grid_width
-        vertical_tiles = self.grid_height
+        self.grid_width_num = random.randint(self.grid_num_min, self.grid_num_max)
+        self.grid_height_num = random.randint(self.grid_num_min, self.grid_num_max)
+        horizontal_tiles = self.grid_width_num
+        vertical_tiles = self.grid_height_num
 
         width_of_square = int(floor(w / float(horizontal_tiles)))
         height_of_square = int(floor(h / float(vertical_tiles)))
@@ -1560,6 +1614,9 @@ class GaussianDistortion(Operation):
         self.mey = mey
         self.sdx = sdx
         self.sdy = sdy
+
+    def __str__(self):
+        return "GDist"
 
     def perform_operation(self, images):
         """
@@ -1723,6 +1780,9 @@ class Zoom(Operation):
         self.min_factor = min_factor
         self.max_factor = max_factor
 
+    def __str__(self):
+        return "Zoom" + str(self.factor)
+
     def perform_operation(self, images):
         """
         Zooms/scales the passed image(s) and returns the new image.
@@ -1733,6 +1793,7 @@ class Zoom(Operation):
          PIL.Image.
         """
         factor = round(random.uniform(self.min_factor, self.max_factor), 2)
+        self.factor = factor
 
         def do(image):
             w, h = image.size
@@ -1779,6 +1840,9 @@ class ZoomRandom(Operation):
         Operation.__init__(self, probability)
         self.percentage_area = percentage_area
         self.randomise = randomise
+
+    def __str__(self):
+        return "ZoomR"
 
     def perform_operation(self, images):
         """
@@ -1882,6 +1946,9 @@ class RandomErasing(Operation):
         Operation.__init__(self, probability)
         self.rectangle_area = rectangle_area
 
+    def __str__(self):
+        return "RErase" + 'S' + str(self.eW) + 'x' + str(self.eH) + 'P' + str(self.eX) + 'x' + str(self.eY)
+
     def perform_operation(self, images):
         """
         Adds a random noise rectangle to a random area of the passed image,
@@ -1900,11 +1967,14 @@ class RandomErasing(Operation):
             w_occlusion_max = int(w * self.rectangle_area)
             h_occlusion_max = int(h * self.rectangle_area)
 
-            w_occlusion_min = int(w * 0.1)
-            h_occlusion_min = int(h * 0.1)
+            w_occlusion_min = int(w * 0.01)
+            h_occlusion_min = int(h * 0.01)
 
             w_occlusion = random.randint(w_occlusion_min, w_occlusion_max)
             h_occlusion = random.randint(h_occlusion_min, h_occlusion_max)
+
+            self.eW = w_occlusion
+            self.eH = h_occlusion
 
             if len(image.getbands()) == 1:
                 rectangle = Image.fromarray(np.uint8(np.random.rand(w_occlusion, h_occlusion) * 255))
@@ -1913,6 +1983,9 @@ class RandomErasing(Operation):
 
             random_position_x = random.randint(0, w - w_occlusion)
             random_position_y = random.randint(0, h - h_occlusion)
+
+            self.eX = random_position_x
+            self.eY = random_position_y
 
             image.paste(rectangle, (random_position_x, random_position_y))
 
