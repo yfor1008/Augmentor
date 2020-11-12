@@ -40,6 +40,7 @@ if __name__ == "__main__":
     # p.random_color(0.5, 0.1, 0.9)
     # p.random_contrast(0.5, 0.1, 0.9)
     # p.random_erasing(1.0, 0.1)
+    p.quality(1.0, -1)
 
     # for augmentor_image in p.augmentor_images:
     #     p._execute(augmentor_image)

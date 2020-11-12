@@ -16,6 +16,9 @@ from __future__ import (absolute_import, division,
 from PIL.Image import Image
 from builtins import *
 
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 from .Operations import *
 from .ImageUtilities import scan_directory, scan, scan_dataframe, AugmentorImage
 
@@ -213,6 +216,7 @@ class Pipeline(object):
 
         images = []
         op_names = []
+        quality = None
 
         if augmentor_image.image_path is not None:
             images.append(Image.open(augmentor_image.image_path))
@@ -232,7 +236,10 @@ class Pipeline(object):
             r = round(random.uniform(0, 1), 1)
             if r <= operation.probability:
                 images = operation.perform_operation(images)
-                op_names.append(str(operation))
+                op_name = str(operation)
+                op_names.append(op_name)
+                if 'qt' in op_name:
+                    quality = int(op_name[2:])
 
         # TEMP FOR TESTING
         # save_to_disk = False
@@ -252,7 +259,10 @@ class Pipeline(object):
                                     + "." \
                                     + (self.save_format if self.save_format else augmentor_image.file_format)
 
-                        images[i].save(os.path.join(augmentor_image.output_directory, save_name))
+                        if quality:
+                            images[i].save(os.path.join(augmentor_image.output_directory, save_name), quality=quality)
+                        else:
+                            images[i].save(os.path.join(augmentor_image.output_directory, save_name))
 
                     else:
                         save_name = os.path.basename(augmentor_image.image_path).split('.')[-2] \
@@ -263,7 +273,10 @@ class Pipeline(object):
                                     + "." \
                                     + (self.save_format if self.save_format else augmentor_image.file_format)
 
-                        images[i].save(os.path.join(augmentor_image.output_directory, save_name))
+                        if quality:
+                            images[i].save(os.path.join(augmentor_image.output_directory, save_name), quality=quality)
+                        else:
+                            images[i].save(os.path.join(augmentor_image.output_directory, save_name))
 
             except IOError as e:
                 print("Error writing %s, %s. Change save_format to PNG?" % (file_name, e.message))
@@ -1783,6 +1796,14 @@ class Pipeline(object):
 
         return paths
 
+    def quality(self, probability, quality=-1):
+        """
+        set quality for jpeg image.
+        """
+        if not 0 < probability <= 1:
+            raise ValueError(Pipeline._probability_error_text)
+        else:
+            self.add_operation(Quality(probability=probability, quality=quality))
 
 class DataFramePipeline(Pipeline):
     def __init__(self, source_dataframe, image_col, category_col, output_directory="output", save_format=None):

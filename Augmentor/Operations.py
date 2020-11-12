@@ -2200,3 +2200,23 @@ class Mixup(Operation):
             augmented_images.append(do(image, image, y1, y2))
 
         return augmented_images
+
+class Quality(Operation):
+    """
+    set quality for jpeg image
+    """
+    def __init__(self, probability, quality):
+        """
+        """
+        Operation.__init__(self, probability)
+        self.quality_init = quality
+
+    def __str__(self):
+        return "qt" + str(self.quality)
+
+    def perform_operation(self, images):
+        """ do nothing!
+        """
+        if self.quality_init < 0:
+            self.quality = random.randint(60, 90)
+        return images
